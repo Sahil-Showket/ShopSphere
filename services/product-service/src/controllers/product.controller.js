@@ -1,32 +1,44 @@
 const {
     getAllProducts,
-    getProductById
+    findProductById
 } = require("../services/product.service");
 
+
 const getProducts = (req, res) => {
+
     const products = getAllProducts();
-    res.json(products)
-}
 
-const getProductByControllerId = (req, res) => {
-    const id = +req.params.id;
-    const product = getProductById(id);
+    return res.json(products);
+};
 
-    if(!product){
+
+const getProductById = (req, res) => {
+
+    const id = Number(req.params.id);
+
+    const product = findProductById(id);
+
+    if (!product) {
         return res.status(404).json({
-            message : "Product not found"
-        })
+            message: "Product not found"
+        });
     }
 
-    res.json(product)
-}
+    return res.json(product);
+};
+
 
 const createProduct = (req, res) => {
-    res.send("Post product")
-}
+
+    return res.status(201).json({
+        message: "Product created",
+        product: req.body
+    });
+};
+
 
 module.exports = {
-    getProductByControllerId,
     getProducts,
+    getProductById,
     createProduct
-}
+};

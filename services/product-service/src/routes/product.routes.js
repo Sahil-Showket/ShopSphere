@@ -2,16 +2,18 @@ const express = require('express');
 
 const {
     getProducts,
-    getProductByControllerId,
+    getProductById,
     createProduct
 } = require("../controllers/product.controller");
+
+const validateProduct = require("../middleware/product.validation")
 
 const router = express.Router();
 
 router.get("/", getProducts);
 
-router.get("/:id", getProductByControllerId);
+router.get("/:id", getProductById);
 
-router.post("/", createProduct);
+router.post("/",validateProduct, createProduct);
 
 module.exports = router;
