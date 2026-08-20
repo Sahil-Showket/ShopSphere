@@ -1,25 +1,32 @@
-const products = [
-    {
-        id: 1,
-        name: "Laptop",
-        price: 75000
-    },
-    {
-        id: 2,
-        name: "Desktop",
-        price: 150000
-    }
-];
+const prisma = require("../lib/prisma");
 
-const getAllProducts = () => {
-    return products;
+const getAllProducts = async () => {
+    return await prisma.product.findMany({
+        orderBy: {
+            id: "asc"
+        }
+    });
 };
 
-const findProductById = (id) => {
-    return products.find(product => product.id === id);
+const findProductById = async (id) => {
+    return await prisma.product.findUnique({
+        where: {
+            id: Number(id)
+        }
+    });
+};
+
+const createProduct = async (productData) => {
+    return await prisma.product.create({
+        data: {
+            name: productData.name,
+            price: productData.price
+        }
+    });
 };
 
 module.exports = {
     getAllProducts,
-    findProductById
+    findProductById,
+    createProduct
 };
