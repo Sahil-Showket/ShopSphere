@@ -1,4 +1,6 @@
-const express = require('express');
+const express = require("express");
+
+const router = express.Router();
 
 const {
     getProducts,
@@ -6,14 +8,12 @@ const {
     createProduct
 } = require("../controllers/product.controller");
 
-const validateProduct = require("../middleware/product.validation")
-
-const router = express.Router();
+const validateProduct = require("../middleware/product.validation");
 
 router.get("/", getProducts);
 
 router.get("/:id", getProductById);
 
-router.post("/",validateProduct, createProduct);
+router.post("/", validateProduct, createProduct);
 
 module.exports = router;
