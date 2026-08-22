@@ -4,7 +4,7 @@ const getProducts = async (req, res, next) => {
     try {
         const products = await productService.getAllProducts();
 
-        res.status(200).json({
+        res.json({
             products
         });
     } catch (error) {
@@ -14,9 +14,7 @@ const getProducts = async (req, res, next) => {
 
 const getProductById = async (req, res, next) => {
     try {
-        const id = Number(req.params.id);
-
-        const product = await productService.getProductById(id);
+        const product = await productService.getProductById(req.params.id);
 
         if (!product) {
             return res.status(404).json({
@@ -24,7 +22,7 @@ const getProductById = async (req, res, next) => {
             });
         }
 
-        res.status(200).json(product);
+        res.json(product);
     } catch (error) {
         next(error);
     }
@@ -32,12 +30,7 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
     try {
-        const { name, price } = req.body;
-
-        const product = await productService.createProduct(
-            name,
-            price
-        );
+        const product = await productService.createProduct(req.body);
 
         res.status(201).json({
             message: "Product created",
@@ -48,9 +41,38 @@ const createProduct = async (req, res, next) => {
     }
 };
 
+const updateProduct = async (req, res, next) => {
+    try {
+        const product = await productService.updateProduct(
+            req.params.id,
+            req.body
+        );
+
+        res.json({
+            message: "Product updated",
+            product
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteProduct = async (req, res, next) => {
+    try {
+        await productService.deleteProduct(req.params.id);
+
+        res.json({
+            message: "Product deleted"
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 module.exports = {
     getProducts,
     getProductById,
-    createProduct
+    createProduct,
+    updateProduct,
+    deleteProduct
 };

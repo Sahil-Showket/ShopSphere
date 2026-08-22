@@ -1,10 +1,11 @@
 const express = require("express");
 
+const productRoutes = require("./routes/product.routes");
+const errorMiddleware = require("./middleware/error.middleware");
+
 const app = express();
 
 app.use(express.json());
-
-const productRoutes = require("./routes/product.routes");
 
 const PORT = 3000;
 
@@ -13,6 +14,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/products", productRoutes);
+
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
     console.log(`Product Service running on port ${PORT}`);

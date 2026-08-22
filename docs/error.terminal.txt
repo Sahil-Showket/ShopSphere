@@ -1,0 +1,58 @@
+Go to the product-service folder:
+
+cd "D:\ShopSphere Multiservice Project\services\product-service"
+
+Then run:
+
+node -e "require('dotenv').config(); const u=new URL(process.env.DATABASE_URL); console.log('user:',u.username); console.log('host:',u.hostname); console.log('port:',u.port); console.log('database:',u.pathname); console.log('password type:',typeof u.password); console.log('password exists:',!!u.password)"
+
+You should get something like:
+
+user: postgres
+host: localhost
+port: 5432
+database: /shopsphere_product
+password type: string
+password exists: true
+Then check your .env
+
+It should look approximately like:
+
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/shopsphere_product"
+
+Important: if your PostgreSQL password contains special characters such as:
+
+@  #  %  /  :  ?
+
+they need to be URL-encoded.
+
+For example:
+
+password: abc@123
+
+becomes:
+
+abc%40123
+
+So:
+
+DATABASE_URL="postgresql://postgres:abc%40123@localhost:5432/shopsphere_product"
+One more important thing
+
+Your terminal shows:
+
+◇ injected env (0) from .env
+
+That means dotenv isn't loading anything new because an environment variable may already exist.
+
+Run:
+
+$env:DATABASE_URL
+
+If that prints an old/wrong connection string, clear it for this PowerShell session:
+
+Remove-Item Env:DATABASE_URL
+
+Then restart:
+
+node src/server.js

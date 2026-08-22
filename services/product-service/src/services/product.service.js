@@ -7,22 +7,45 @@ const getAllProducts = async () => {
 const getProductById = async (id) => {
     return await prisma.product.findUnique({
         where: {
-            id: id
+            id: Number(id)
         }
     });
 };
 
-const createProduct = async (name, price) => {
+const createProduct = async (data) => {
     return await prisma.product.create({
         data: {
-            name,
-            price
+            name: data.name,
+            price: data.price
         }
     });
 };
+
+const updateProduct = async (id, data) => {
+    return await prisma.product.update({
+        where: {
+            id: Number(id)
+        },
+        data: {
+            name: data.name,
+            price: data.price
+        }
+    });
+};
+
+const deleteProduct = async (id) => {
+    return await prisma.product.delete({
+        where: {
+            id: Number(id)
+        }
+    });
+};
+
 
 module.exports = {
     getAllProducts,
     getProductById,
-    createProduct
+    createProduct,
+    updateProduct,
+    deleteProduct
 };
