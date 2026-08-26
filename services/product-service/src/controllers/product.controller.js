@@ -22,7 +22,10 @@ const getProductById = async (req, res, next) => {
             });
         }
 
-        res.json(product);
+        res.status(200).json({
+            product
+        });
+
     } catch (error) {
         next(error);
     }
@@ -59,15 +62,22 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
     try {
-        await productService.deleteProduct(req.params.id);
+        const product = await productService.deleteProduct(req.params.id);
 
-        res.json({
-            message: "Product deleted"
+        if (!product) {
+            return res.status(404).json({
+                message: "Product not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Product deleted successfully"
         });
+
     } catch (error) {
         next(error);
     }
-};
+}; 
 
 module.exports = {
     getProducts,

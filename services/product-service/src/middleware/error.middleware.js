@@ -1,4 +1,4 @@
-const errorHandler = (err, req, res, next) => {
+const errorMiddleware = (err, req, res, next) => {
 
     console.error(err);
 
@@ -7,4 +7,4 @@ const errorHandler = (err, req, res, next) => {
     });
 };
 
-module.exports = errorHandler;
+module.exports = errorMiddleware;

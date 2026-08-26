@@ -11,15 +11,16 @@ const {
 } = require("../controllers/product.controller");
 
 const validateProduct = require("../middleware/product.validation");
+const validateId = require("../middleware/validateId");
 
 router.get("/", getProducts);
 
-router.get("/:id", getProductById);
+router.get("/:id", validateId, getProductById);
 
 router.post("/", validateProduct, createProduct);
 
-router.put("/:id", validateProduct, updateProduct);
+router.put("/:id", validateId, validateProduct, updateProduct);
 
-router.delete("/:id", deleteProduct);
+router.delete("/:id", validateId, deleteProduct);
 
 module.exports = router;

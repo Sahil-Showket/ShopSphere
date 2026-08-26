@@ -2,16 +2,19 @@ const productSchema = require("../schemas/product.schema");
 
 const validateProduct = (req, res, next) => {
 
-    const result = productSchema.safeParse(req.body);
+    const { name, price } = req.body;
 
-    if (!result.success) {
+    if (!name || typeof name !== "string" || name.trim() === "") {
         return res.status(400).json({
-            message: "Invalid product data",
-            errors: result.error.issues
+            message: "Valid product name is required"
         });
     }
 
-    req.body = result.data;
+    if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+        return res.status(400).json({
+            message: "Price must be a positive number"
+        });
+    }
 
     next();
 };

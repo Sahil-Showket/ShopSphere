@@ -54,5 +54,4 @@ If that prints an old/wrong connection string, clear it for this PowerShell sess
 Remove-Item Env:DATABASE_URL
 
 Then restart:
-
 node src/server.js

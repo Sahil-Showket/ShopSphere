@@ -1,3 +1,8 @@
+const path = require("path");
+const { loadEnvFile } = require("node:process");
+
+loadEnvFile(path.join(__dirname, "../.env"));
+
 const express = require("express");
 
 const productRoutes = require("./routes/product.routes");

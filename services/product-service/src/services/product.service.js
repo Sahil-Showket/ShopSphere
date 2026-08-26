@@ -34,6 +34,16 @@ const updateProduct = async (id, data) => {
 };
 
 const deleteProduct = async (id) => {
+    const product = await prisma.product.findUnique({
+        where: {
+            id: Number(id)
+        }
+    });
+
+    if (!product) {
+        return null;
+    }
+
     return await prisma.product.delete({
         where: {
             id: Number(id)

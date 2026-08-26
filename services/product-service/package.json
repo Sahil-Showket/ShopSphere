@@ -1,11 +1,11 @@
 {
-  "name": "src",
+  "name": "product-service",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "ShopSphere Product Service",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "keywords": [],
   "author": "",
