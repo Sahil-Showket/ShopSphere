@@ -1,12 +1,18 @@
-require("dotenv").config();
+require("dotenv").config({
+    path: "./gateway/.env"
+});
+
+require("dotenv").config(); 
 
 const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
+const authenticateToken = require("./middleware/auth.middleware");
 
 const app = express();
 
 const PORT = process.env.PORT || 4000;
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL;
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
 
 app.get("/", (req, res) => {
     res.json({
@@ -26,6 +32,18 @@ app.use(
     createProxyMiddleware({
         target: PRODUCT_SERVICE_URL,
         changeOrigin: true
+    })
+);
+
+app.use("/auth/me", authenticateToken);
+app.use("/auth/admin", authenticateToken);
+
+app.use(
+    "/auth",
+    createProxyMiddleware({
+        target: AUTH_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: (path) => `/auth${path}`
     })
 );
 
