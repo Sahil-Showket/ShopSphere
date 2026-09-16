@@ -12,15 +12,22 @@ const {
 
 const validateProduct = require("../middleware/product.validation");
 const validateId = require("../middleware/validateId");
+const authenticateToken = require("../middleware/auth.middleware");
 
 router.get("/", getProducts);
 
 router.get("/:id", validateId, getProductById);
 
-router.post("/", validateProduct, createProduct);
+router.post("/", authenticateToken, validateProduct, createProduct);
 
-router.put("/:id", validateId, validateProduct, updateProduct);
+router.put(
+    "/:id",
+    authenticateToken,
+    validateId,
+    validateProduct,
+    updateProduct
+);
 
-router.delete("/:id", validateId, deleteProduct);
+router.delete("/:id", authenticateToken, validateId, deleteProduct);
 
 module.exports = router;
