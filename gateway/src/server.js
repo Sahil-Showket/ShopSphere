@@ -13,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
+const CART_SERVICE_URL = process.env.CART_SERVICE_URL;
 
 app.get("/", (req, res) => {
     res.json({
@@ -45,6 +46,15 @@ app.use(
         target: AUTH_SERVICE_URL,
         changeOrigin: true,
         pathRewrite: (path) => `/auth${path}`
+    })
+);
+
+app.use(
+    "/cart",
+    createProxyMiddleware({
+        target: CART_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: (path) => `/cart${path}`
     })
 );
 
