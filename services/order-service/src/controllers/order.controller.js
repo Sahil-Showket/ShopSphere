@@ -99,6 +99,76 @@ const createOrder = async (req, res, next) => {
     }
 };
 
+const getMyOrders = async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+
+        const orders = await prisma.order.findMany({
+            where: {
+                userId
+            },
+            include: {
+                items: true
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        res.status(200).json({
+            orders
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+const getOrderById = async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const orderId = Number(req.params.id);
+
+        if (!Number.isInteger(orderId) || orderId <= 0) {
+            throw new AppError(
+                "Invalid order ID",
+                400
+            );
+        }
+
+        const order = await prisma.order.findUnique({
+            where: {
+                id: orderId
+            },
+            include: {
+                items: true
+            }
+        });
+
+        if (!order) {
+            throw new AppError(
+                "Order not found",
+                404
+            );
+        }
+
+        if (order.userId !== userId) {
+            throw new AppError(
+                "You are not allowed to access this order",
+                403
+            );
+        }
+
+        res.status(200).json(order);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
-    createOrder
+    createOrder,
+    getMyOrders,
+    getOrderById
 };
