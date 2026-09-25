@@ -2,7 +2,7 @@ require("dotenv").config({
     path: "./gateway/.env"
 });
 
-require("dotenv").config(); 
+require("dotenv").config();
 
 const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
@@ -14,6 +14,17 @@ const PORT = process.env.PORT || 4000;
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL;
+const ORDER_SERVICE_URL =
+    process.env.ORDER_SERVICE_URL || "http://localhost:3003";
+
+app.use(
+    "/orders",
+    createProxyMiddleware({
+        target: ORDER_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: (path) => `/orders${path}`
+    })
+);
 
 app.get("/", (req, res) => {
     res.json({
