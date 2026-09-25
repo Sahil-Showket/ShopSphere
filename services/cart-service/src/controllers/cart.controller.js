@@ -1,3 +1,5 @@
+const { getProductById } = require("../services/product.service");
+
 const prisma = require("../config/prisma");
 
 const getCart = async (req, res, next) => {
@@ -31,6 +33,15 @@ const getCart = async (req, res, next) => {
 };
 
 const addToCart = async (req, res, next) => {
+    const { productId, quantity } = req.body;
+
+    try {
+        await getProductById(productId);
+    } catch (error) {
+        return res.status(404).json({
+            message: "Product not found"
+        });
+    }
     try {
         const userId = req.user.userId;
         const { productId, quantity } = req.body;
