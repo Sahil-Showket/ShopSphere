@@ -1,8 +1,13 @@
 const errorMiddleware = (error, req, res, next) => {
     console.error(error);
 
-    res.status(500).json({
-        message: "Internal server error"
+    const statusCode = error.statusCode || 500;
+
+    res.status(statusCode).json({
+        message:
+            error.isOperational
+                ? error.message
+                : "Internal server error"
     });
 };
 
