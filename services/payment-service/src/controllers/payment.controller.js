@@ -5,17 +5,20 @@ const {
     processPayment
 } = require("../services/payment.service");
 
+const {
+    getOrderById
+} = require("../services/order.service");
+
 const createPayment = async (req, res, next) => {
     try {
+
         const userId = req.user.userId;
 
         const {
-            orderId,
-            amount
+            orderId
         } = req.body;
 
         const parsedOrderId = Number(orderId);
-        const parsedAmount = Number(amount);
 
         if (
             !Number.isInteger(parsedOrderId) ||
@@ -27,12 +30,67 @@ const createPayment = async (req, res, next) => {
             );
         }
 
-        if (
-            !Number.isFinite(parsedAmount) ||
-            parsedAmount <= 0
-        ) {
+        /*
+         * Get the real order from Order Service.
+         * We intentionally DO NOT accept amount
+         * from the client.
+         */
+
+        const authHeader =
+            req.headers.authorization;
+
+        if (!authHeader) {
             throw new AppError(
-                "Invalid payment amount",
+                "Authorization header missing",
+                401
+            );
+        }
+
+        const token =
+            authHeader.split(" ")[1];
+
+        if (!token) {
+            throw new AppError(
+                "Token missing",
+                401
+            );
+        }
+
+        const order =
+            await getOrderById(
+                parsedOrderId,
+                token
+            );
+
+        /*
+         * Extra ownership check.
+         */
+
+        if (order.userId !== userId) {
+            throw new AppError(
+                "You are not allowed to pay for this order",
+                403
+            );
+        }
+
+        /*
+         * Prevent payment for cancelled orders.
+         */
+
+        if (order.status === "CANCELLED") {
+            throw new AppError(
+                "Cannot pay for a cancelled order",
+                400
+            );
+        }
+
+        /*
+         * Prevent paying an already delivered order.
+         */
+
+        if (order.status === "DELIVERED") {
+            throw new AppError(
+                "Order has already been completed",
                 400
             );
         }
@@ -51,15 +109,33 @@ const createPayment = async (req, res, next) => {
             );
         }
 
+        /*
+         * IMPORTANT:
+         * Amount comes from Order Service.
+         */
+
+        const amount = order.total;
+
+        if (
+            typeof amount !== "number" ||
+            !Number.isFinite(amount) ||
+            amount <= 0
+        ) {
+            throw new AppError(
+                "Invalid order total",
+                500
+            );
+        }
+
         const paymentResult =
-            await processPayment(parsedAmount);
+            await processPayment(amount);
 
         const payment =
             await prisma.payment.create({
                 data: {
                     userId,
                     orderId: parsedOrderId,
-                    amount: parsedAmount,
+                    amount,
                     status: paymentResult.success
                         ? "SUCCESS"
                         : "FAILED",
