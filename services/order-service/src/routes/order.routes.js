@@ -21,6 +21,13 @@ const {
 } = require("../controllers/order-cancel.controller");
 
 
+const requireInternalService =
+    require("../middleware/internal.middleware");
+
+const {
+    confirmOrderAfterPayment
+} = require("../controllers/internal-order.controller");
+
 router.post(
     "/",
     authenticateToken,
@@ -34,6 +41,11 @@ router.get(
     getMyOrders
 );
 
+router.patch(
+    "/:id/confirm-payment",
+    requireInternalService,
+    confirmOrderAfterPayment
+);
 
 router.get(
     "/:id",
@@ -54,6 +66,8 @@ router.patch(
     authenticateToken,
     cancelOrder
 );
+
+
 
 
 module.exports = router;

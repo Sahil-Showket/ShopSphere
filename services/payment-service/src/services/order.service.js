@@ -51,6 +51,38 @@ const getOrderById = async (orderId, token) => {
     }
 };
 
+const confirmOrderAfterPayment = async (orderId) => {
+    try {
+        const response = await axios.patch(
+            `${ORDER_SERVICE_URL}/orders/${orderId}/confirm-payment`,
+            {},
+            {
+                headers: {
+                    "x-service-secret":
+                        process.env.INTERNAL_SERVICE_SECRET
+                }
+            }
+        );
+
+        return response.data;
+
+    } catch (error) {
+        if (error.response) {
+            throw new AppError(
+                error.response.data?.message ||
+                "Unable to confirm order",
+                error.response.status
+            );
+        }
+
+        throw new AppError(
+            "Order service unavailable",
+            503
+        );
+    }
+};
+
 module.exports = {
-    getOrderById
+    getOrderById,
+    confirmOrderAfterPayment
 };

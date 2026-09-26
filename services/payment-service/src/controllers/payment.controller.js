@@ -6,7 +6,8 @@ const {
 } = require("../services/payment.service");
 
 const {
-    getOrderById
+    getOrderById,
+    confirmOrderAfterPayment
 } = require("../services/order.service");
 
 const createPayment = async (req, res, next) => {
@@ -143,6 +144,12 @@ const createPayment = async (req, res, next) => {
                         paymentResult.transactionId
                 }
             });
+        if (paymentResult.success) {
+
+            await confirmOrderAfterPayment(
+                parsedOrderId
+            );
+        }
 
         res.status(201).json(payment);
 
