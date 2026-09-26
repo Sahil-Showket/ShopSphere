@@ -17,6 +17,10 @@ const CART_SERVICE_URL = process.env.CART_SERVICE_URL;
 const ORDER_SERVICE_URL =
     process.env.ORDER_SERVICE_URL || "http://localhost:3003";
 
+const PAYMENT_SERVICE_URL =
+    process.env.PAYMENT_SERVICE_URL ||
+    "http://localhost:3004";
+
 app.use(
     "/orders",
     createProxyMiddleware({
@@ -66,6 +70,16 @@ app.use(
         target: CART_SERVICE_URL,
         changeOrigin: true,
         pathRewrite: (path) => `/cart${path}`
+    })
+);
+
+app.use(
+    "/payments",
+    createProxyMiddleware({
+        target: PAYMENT_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: (path) =>
+            `/payments${path}`
     })
 );
 
