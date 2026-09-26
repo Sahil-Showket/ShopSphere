@@ -16,6 +16,11 @@ const {
 } = require("../controllers/order-status.controller");
 
 
+const {
+    cancelOrder
+} = require("../controllers/order-cancel.controller");
+
+
 router.post(
     "/",
     authenticateToken,
@@ -42,6 +47,12 @@ router.patch(
     authenticateToken,
     requireAdmin,
     updateOrderStatus
+);
+
+router.patch(
+    "/:id/cancel",
+    authenticateToken,
+    cancelOrder
 );
 
 

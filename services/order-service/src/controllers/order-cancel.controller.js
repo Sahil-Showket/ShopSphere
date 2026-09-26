@@ -1,23 +1,10 @@
 const prisma = require("../config/prisma");
 const AppError = require("../utils/AppError");
 
-const {
-    validateStatusTransition
-} = require("../services/order-status.service");
-
-const VALID_STATUSES = [
-    "PENDING",
-    "CONFIRMED",
-    "PROCESSING",
-    "SHIPPED",
-    "DELIVERED",
-    "CANCELLED"
-];
-
-const updateOrderStatus = async (req, res, next) => {
+const cancelOrder = async (req, res, next) => {
     try {
+        const userId = req.user.userId;
         const orderId = Number(req.params.id);
-        const { status } = req.body;
 
         if (!Number.isInteger(orderId) || orderId <= 0) {
             throw new AppError(
@@ -26,16 +13,12 @@ const updateOrderStatus = async (req, res, next) => {
             );
         }
 
-        if (!VALID_STATUSES.includes(status)) {
-            throw new AppError(
-                "Invalid order status",
-                400
-            );
-        }
-
         const order = await prisma.order.findUnique({
             where: {
                 id: orderId
+            },
+            include: {
+                items: true
             }
         });
 
@@ -46,25 +29,37 @@ const updateOrderStatus = async (req, res, next) => {
             );
         }
 
-        validateStatusTransition(
-            order.status,
-            status
-        );
+        if (order.userId !== userId) {
+            throw new AppError(
+                "You are not allowed to cancel this order",
+                403
+            );
+        }
 
-        const updatedOrder =
+        if (
+            order.status !== "PENDING" &&
+            order.status !== "CONFIRMED"
+        ) {
+            throw new AppError(
+                `Order cannot be cancelled when status is ${order.status}`,
+                400
+            );
+        }
+
+        const cancelledOrder =
             await prisma.order.update({
                 where: {
                     id: orderId
                 },
                 data: {
-                    status
+                    status: "CANCELLED"
                 },
                 include: {
                     items: true
                 }
             });
 
-        res.status(200).json(updatedOrder);
+        res.status(200).json(cancelledOrder);
 
     } catch (error) {
         next(error);
@@ -72,5 +67,5 @@ const updateOrderStatus = async (req, res, next) => {
 };
 
 module.exports = {
-    updateOrderStatus
+    cancelOrder
 };
