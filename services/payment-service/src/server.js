@@ -13,6 +13,10 @@ const app = express();
 const PORT =
     process.env.PORT || 3004;
 
+const {
+    connectRabbitMQ
+} = require("./config/rabbitmq");
+
 app.use(express.json());
 
 app.use(
@@ -39,8 +43,27 @@ app.get("/health", (req, res) => {
 app.use(errorMiddleware);
 
 
-app.listen(PORT, () => {
-    console.log(
-        `Payment Service running on port ${PORT}`
-    );
-});
+const startServer = async () => {
+
+    try {
+
+        await connectRabbitMQ();
+
+        app.listen(PORT, () => {
+            console.log(
+                `Payment Service running on port ${PORT}`
+            );
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Failed to start Payment Service:",
+            error
+        );
+
+        process.exit(1);
+    }
+};
+
+startServer();

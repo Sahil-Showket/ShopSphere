@@ -10,6 +10,10 @@ const {
     confirmOrderAfterPayment
 } = require("../services/order.service");
 
+const {
+    publishEvent
+} = require("../services/event.service");
+
 const createPayment = async (req, res, next) => {
     try {
 
@@ -146,10 +150,22 @@ const createPayment = async (req, res, next) => {
             });
         if (paymentResult.success) {
 
-            await confirmOrderAfterPayment(
-                parsedOrderId
-            );
+    await confirmOrderAfterPayment(
+        parsedOrderId
+    );
+
+    await publishEvent(
+        "payment.success",
+        {
+            paymentId: payment.id,
+            userId,
+            orderId: parsedOrderId,
+            amount: payment.amount,
+            transactionId:
+                payment.transactionId
         }
+    );
+}
 
         res.status(201).json(payment);
 

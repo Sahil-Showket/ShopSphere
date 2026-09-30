@@ -15,6 +15,10 @@ const PORT =
     process.env.PORT || 3005;
 
 
+const {
+    connectRabbitMQ
+} = require("./config/rabbitmq");
+
 app.use(express.json());
 
 
@@ -48,10 +52,29 @@ app.get("/health", (req, res) => {
 app.use(errorMiddleware);
 
 
-app.listen(PORT, () => {
+const startServer = async () => {
 
-    console.log(
-        `Notification Service running on port ${PORT}`
-    );
+    try {
 
-});
+        await connectRabbitMQ();
+
+        app.listen(PORT, () => {
+
+            console.log(
+                `Notification Service running on port ${PORT}`
+            );
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Failed to start Notification Service:",
+            error
+        );
+
+        process.exit(1);
+    }
+};
+
+startServer();
