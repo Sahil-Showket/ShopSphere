@@ -19,6 +19,10 @@ const {
     connectRabbitMQ
 } = require("./config/rabbitmq");
 
+const {
+    isRabbitMQConnected
+} = require("./config/rabbitmq");
+
 app.use(express.json());
 
 
@@ -40,14 +44,22 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
 
-    res.json({
-        service:
-            "notification-service",
-        status: "UP"
-    });
+    const rabbitmq =isRabbitMQConnected();
+
+    res.status(                 
+        rabbitmq ? 200 : 503
+    ).json({
+        service: "notification-service",
+        status: rabbitmq
+            ? "UP"
+            : "DEGRADED",
+        rabbitmq:
+            rabbitmq
+                ? "UP"
+                : "DOWN"
+    });     
 
 });
-
 
 app.use(errorMiddleware);
 

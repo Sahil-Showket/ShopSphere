@@ -2,13 +2,27 @@ const amqp = require("amqplib");
 
 const {
     handleEvent
-} = require(
-    "../services/event-handler.service"
-);
+} = require("../services/event-handler.service");
 
 const RABBITMQ_URL =
     process.env.RABBITMQ_URL ||
     "amqp://localhost:5672";
+
+const EVENT_EXCHANGE =
+    "shopsphere.events";
+
+const DLX_EXCHANGE =
+    "shopsphere.dlx";
+
+const EVENT_QUEUE =
+    "notification-service";
+
+const DLQ_QUEUE =
+    "notification-service.dlq";
+
+const isRabbitMQConnected = () => {
+    return Boolean(channel);
+};
 
 let connection;
 let channel;
@@ -25,8 +39,11 @@ const connectRabbitMQ = async () => {
         await connection.createChannel();
 
 
+    /*
+     * Main event exchange
+     */
     await channel.assertExchange(
-        "shopsphere.events",
+        EVENT_EXCHANGE,
         "topic",
         {
             durable: true
@@ -34,27 +51,73 @@ const connectRabbitMQ = async () => {
     );
 
 
-    const queue =
-        await channel.assertQueue(
-            "notification-service",
-            {
-                durable: true
-            }
-        );
+    /*
+     * Dead-letter exchange
+     */
+    await channel.assertExchange(
+        DLX_EXCHANGE,
+        "direct",
+        {
+            durable: true
+        }
+    );
+
+
+    /*
+     * Dead-letter queue
+     */
+    await channel.assertQueue(
+        DLQ_QUEUE,
+        {
+            durable: true
+        }
+    );
 
 
     await channel.bindQueue(
-        queue.queue,
-        "shopsphere.events",
+        DLQ_QUEUE,
+        DLX_EXCHANGE,
+        "notification-service"
+    );
+
+
+    /*
+     * Main notification queue
+     */
+    await channel.assertQueue(
+        EVENT_QUEUE,
+        {
+            durable: true,
+            deadLetterExchange:
+                DLX_EXCHANGE,
+            deadLetterRoutingKey:
+                "notification-service"
+        }
+    );
+
+
+    /*
+     * Event bindings
+     */
+    await channel.bindQueue(
+        EVENT_QUEUE,
+        EVENT_EXCHANGE,
         "payment.success"
     );
 
 
     await channel.bindQueue(
-        queue.queue,
-        "shopsphere.events",
+        EVENT_QUEUE,
+        EVENT_EXCHANGE,
         "order.confirmed"
     );
+
+
+    /*
+     * Prevent consumer from receiving
+     * too many messages at once.
+     */
+    channel.prefetch(1);
 
 
     console.log(
@@ -62,8 +125,11 @@ const connectRabbitMQ = async () => {
     );
 
 
+    /*
+     * Start consumer
+     */
     channel.consume(
-        queue.queue,
+        EVENT_QUEUE,
         async (message) => {
 
             if (!message) {
@@ -80,24 +146,35 @@ const connectRabbitMQ = async () => {
 
 
                 console.log(
-                    "Received event:",
-                    event.eventType
+                    `Processing event: ${event.eventType}`
                 );
 
 
                 await handleEvent(event);
 
 
+                /*
+                 * Processing successful
+                 */
                 channel.ack(message);
+
+
+                console.log(
+                    `Event processed: ${event.eventType}`
+                );
 
             } catch (error) {
 
                 console.error(
-                    "Error processing event:",
-                    error
+                    "Event processing failed:",
+                    error.message
                 );
 
 
+                /*
+                 * Send failed message
+                 * to Dead Letter Queue.
+                 */
                 channel.nack(
                     message,
                     false,
@@ -106,9 +183,47 @@ const connectRabbitMQ = async () => {
             }
         }
     );
+
+
+    /*
+     * Graceful shutdown
+     */
+    const shutdown = async () => {
+
+        console.log(
+            "Closing RabbitMQ connection..."
+        );
+
+        try {
+
+            await channel.close();
+            await connection.close();
+
+        } catch (error) {
+
+            console.error(
+                "RabbitMQ shutdown error:",
+                error.message
+            );
+        }
+
+        process.exit(0);
+    };
+
+
+    process.on(
+        "SIGINT",
+        shutdown
+    );
+
+    process.on(
+        "SIGTERM",
+        shutdown
+    );
 };
 
 
 module.exports = {
-    connectRabbitMQ
+    connectRabbitMQ,
+    isRabbitMQConnected
 };
