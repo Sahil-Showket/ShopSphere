@@ -1,5 +1,11 @@
 const productService = require("../services/product.service");
 
+const {
+    getCachedProduct,
+    cacheProduct,
+    deleteCachedProduct
+} = require("../services/cache.service");
+
 const getProducts = async (req, res, next) => {
     try {
         const products = await productService.getAllProducts();
@@ -14,7 +20,37 @@ const getProducts = async (req, res, next) => {
 
 const getProductById = async (req, res, next) => {
     try {
-        const product = await productService.getProductById(req.params.id);
+        const productId = Number(req.params.id);
+
+        if (
+            !Number.isInteger(productId) ||
+            productId <= 0
+        ) {
+            return res.status(400).json({
+                message: "Invalid product ID"
+            });
+        }
+
+        // 1. Check Redis
+        const cachedProduct = await getCachedProduct(productId);
+
+        if (cachedProduct) {
+            console.log(
+                `Redis cache HIT: product ${productId}`
+            );
+
+            return res.status(200).json({
+                product: cachedProduct
+            });
+        }
+
+        // 2. Redis miss → PostgreSQL
+        console.log(
+            `Redis cache MISS: product ${productId}`
+        );
+
+        const product =
+            await productService.getProductById(productId);
 
         if (!product) {
             return res.status(404).json({
@@ -22,6 +58,10 @@ const getProductById = async (req, res, next) => {
             });
         }
 
+        // 3. Store result in Redis
+        await cacheProduct(product);
+
+        // 4. Return product
         res.status(200).json({
             product
         });
@@ -33,7 +73,8 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
     try {
-        const product = await productService.createProduct(req.body);
+        const product =
+            await productService.createProduct(req.body);
 
         res.status(201).json({
             message: "Product created",
@@ -46,9 +87,15 @@ const createProduct = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
     try {
-        const product = await productService.updateProduct(
-            req.params.id,
-            req.body
+        const product =
+            await productService.updateProduct(
+                req.params.id,
+                req.body
+            );
+
+        // Invalidate Redis cache
+        await deleteCachedProduct(
+            Number(req.params.id)
         );
 
         res.json({
@@ -62,13 +109,21 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
     try {
-        const product = await productService.deleteProduct(req.params.id);
+        const product =
+            await productService.deleteProduct(
+                req.params.id
+            );
 
         if (!product) {
             return res.status(404).json({
                 message: "Product not found"
             });
         }
+
+        // Invalidate Redis cache
+        await deleteCachedProduct(
+            Number(req.params.id)
+        );
 
         res.status(200).json({
             message: "Product deleted successfully"
@@ -77,7 +132,7 @@ const deleteProduct = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-}; 
+};
 
 module.exports = {
     getProducts,
