@@ -5,6 +5,10 @@ const orderRoutes = require("./routes/order.routes");
 const errorMiddleware = require("./middleware/error.middleware");
 
 const app = express();
+const {
+    connectRabbitMQ
+} = require("./config/rabbitmq");
+
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3003;
@@ -28,6 +32,29 @@ app.get("/health", (req, res) => {
 
 app.use(errorMiddleware);
 
-app.listen(PORT, () => {
-    console.log(`Order Service running on port ${PORT}`);
-});
+const startServer = async () => {
+
+    try {
+
+        await connectRabbitMQ();
+
+        app.listen(PORT, () => {
+
+            console.log(
+                `Order Service running on port ${PORT}`
+            );
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Failed to start Order Service:",
+            error
+        );
+
+        process.exit(1);
+    }
+};
+
+startServer();

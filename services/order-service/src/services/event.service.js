@@ -1,17 +1,24 @@
-const { getChannel } = require("../config/rabbitmq");
+const {
+    getChannel
+} = require("../config/rabbitmq");
+
 
 const publishEvent = async (
     eventType,
     data
 ) => {
 
-    const channel = getChannel();
+    const channel =
+        getChannel();
+
 
     const event = {
         eventType,
         data,
-        timestamp: new Date().toISOString()
+        timestamp:
+            new Date().toISOString()
     };
+
 
     channel.publish(
         "shopsphere.events",
@@ -24,10 +31,12 @@ const publishEvent = async (
         }
     );
 
+
     console.log(
-        `Event published: ${eventType}`
+        `Published event: ${eventType}`
     );
 };
+
 
 module.exports = {
     publishEvent

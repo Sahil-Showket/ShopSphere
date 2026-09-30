@@ -1,5 +1,11 @@
 const amqp = require("amqplib");
 
+const {
+    handleEvent
+} = require(
+    "../services/event-handler.service"
+);
+
 const RABBITMQ_URL =
     process.env.RABBITMQ_URL ||
     "amqp://localhost:5672";
@@ -7,13 +13,17 @@ const RABBITMQ_URL =
 let connection;
 let channel;
 
+
 const connectRabbitMQ = async () => {
 
     connection =
-        await amqp.connect(RABBITMQ_URL);
+        await amqp.connect(
+            RABBITMQ_URL
+        );
 
     channel =
         await connection.createChannel();
+
 
     await channel.assertExchange(
         "shopsphere.events",
@@ -23,6 +33,7 @@ const connectRabbitMQ = async () => {
         }
     );
 
+
     const queue =
         await channel.assertQueue(
             "notification-service",
@@ -31,15 +42,25 @@ const connectRabbitMQ = async () => {
             }
         );
 
+
     await channel.bindQueue(
         queue.queue,
         "shopsphere.events",
         "payment.success"
     );
 
+
+    await channel.bindQueue(
+        queue.queue,
+        "shopsphere.events",
+        "order.confirmed"
+    );
+
+
     console.log(
         "Notification Service connected to RabbitMQ"
     );
+
 
     channel.consume(
         queue.queue,
@@ -49,6 +70,7 @@ const connectRabbitMQ = async () => {
                 return;
             }
 
+
             try {
 
                 const event =
@@ -56,12 +78,15 @@ const connectRabbitMQ = async () => {
                         message.content.toString()
                     );
 
+
                 console.log(
                     "Received event:",
-                    event
+                    event.eventType
                 );
 
+
                 await handleEvent(event);
+
 
                 channel.ack(message);
 
@@ -71,6 +96,7 @@ const connectRabbitMQ = async () => {
                     "Error processing event:",
                     error
                 );
+
 
                 channel.nack(
                     message,
@@ -82,41 +108,6 @@ const connectRabbitMQ = async () => {
     );
 };
 
-const handleEvent = async (event) => {
-
-    if (
-        event.eventType ===
-        "payment.success"
-    ) {
-
-        const {
-            userId,
-            orderId,
-            amount,
-            transactionId
-        } = event.data;
-
-        console.log(
-            "Payment successful notification:"
-        );
-
-        console.log(
-            `User: ${userId}`
-        );
-
-        console.log(
-            `Order: ${orderId}`
-        );
-
-        console.log(
-            `Amount: ${amount}`
-        );
-
-        console.log(
-            `Transaction: ${transactionId}`
-        );
-    }
-};
 
 module.exports = {
     connectRabbitMQ

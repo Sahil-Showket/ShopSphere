@@ -3,6 +3,10 @@ const { getCart } = require("../services/cart.service");
 const { getProductById } = require("../services/product.service");
 const AppError = require("../utils/AppError");
 
+const {
+    publishEvent
+} = require("../services/event.service");
+
 const createOrder = async (req, res, next) => {
     try {
         const userId = req.user.userId;
@@ -91,6 +95,15 @@ const createOrder = async (req, res, next) => {
                 items: true
             }
         });
+
+        await publishEvent(
+            "order.confirmed",
+            {
+                userId: updatedOrder.userId,
+                orderId: updatedOrder.id,
+                total: updatedOrder.total
+            }
+        );
 
         res.status(201).json(order);
 
