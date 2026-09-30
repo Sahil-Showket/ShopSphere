@@ -21,6 +21,10 @@ const PAYMENT_SERVICE_URL =
     process.env.PAYMENT_SERVICE_URL ||
     "http://localhost:3004";
 
+const NOTIFICATION_SERVICE_URL =
+    process.env.NOTIFICATION_SERVICE_URL ||
+    "http://localhost:3005";
+
 app.use(
     "/orders",
     createProxyMiddleware({
@@ -80,6 +84,16 @@ app.use(
         changeOrigin: true,
         pathRewrite: (path) =>
             `/payments${path}`
+    })
+);
+
+app.use(
+    "/notifications",
+    createProxyMiddleware({
+        target: NOTIFICATION_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: (path) =>
+            `/notifications${path}`
     })
 );
 
