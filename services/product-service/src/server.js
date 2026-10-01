@@ -1,76 +1,104 @@
-const path = require("path");
-const { loadEnvFile } = require("node:process");
+require("dotenv").config();
 
-loadEnvFile(path.join(__dirname, "../.env"));
+const express =
+    require("express");
 
-const express = require("express");
+const productRoutes =
+    require("./routes/product.routes");
 
-const productRoutes = require("./routes/product.routes");
-const errorMiddleware = require("./middleware/error.middleware");
-
-const app = express();
-
-app.use(express.json());
-
-const PORT = 3000;
+const errorMiddleware =
+    require("./middleware/error.middleware");
 
 const {
-    connectRedis
+    connectRedis,
+    isRedisAvailable
 } = require("./config/redis");
 
-const {
-    redisClient
-} = require("./config/redis");
 
-app.get("/", (req, res) => {
-    res.send("Welcome to ShopSphere Product Service");
+const app =
+    express();
+
+
+const PORT =
+    process.env.PORT || 3000;
+
+
+app.use(
+    express.json()
+);
+
+
+app.use(
+    "/products",
+    productRoutes
+);
+
+
+app.get("/", (
+    req,
+    res
+) => {
+
+    res.json({
+        message:
+            "ShopSphere Product Service"
+    });
+
 });
 
-app.use("/products", productRoutes);
-app.get("/health", (req, res) => {
+
+app.get("/health", (
+    req,
+    res
+) => {
 
     const redis =
-        redisClient.isReady;
+        isRedisAvailable();
 
-    res.status(
-        redis ? 200 : 503
-    ).json({
-        service: "product-service",
-        status: redis
-            ? "UP"
-            : "DEGRADED",
+
+    res.status(200).json({
+
+        service:
+            "product-service",
+
+        status:
+            "UP",
+
         redis:
             redis
                 ? "UP"
                 : "DOWN"
+
     });
+
 });
 
-app.use(errorMiddleware);
+
+app.use(
+    errorMiddleware
+);
+
 
 const startServer = async () => {
 
-    try {
+    // Redis is optional.
+    // Product Service can run without it.
 
-        await connectRedis();
+    await connectRedis();
 
-        app.listen(PORT, () => {
+
+    app.listen(
+        PORT,
+        () => {
 
             console.log(
                 `Product Service running on port ${PORT}`
             );
 
-        });
+        }
+    );
 
-    } catch (error) {
-
-        console.error(
-            "Failed to start Product Service:",
-            error
-        );
-
-        process.exit(1);
-    }
 };
+
 
 startServer();

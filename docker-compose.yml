@@ -1,0 +1,360 @@
+services:
+
+  # ========================================
+  # POSTGRES DATABASES
+  # ========================================
+
+  postgres-auth:
+    image: postgres:17
+    container_name: shopsphere-postgres-auth
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_auth
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  postgres-product:
+    image: postgres:17
+    container_name: shopsphere-postgres-product
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_product
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_product_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_product"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  postgres-cart:
+    image: postgres:17
+    container_name: shopsphere-postgres-cart
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_cart
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_cart_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_cart"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  postgres-order:
+    image: postgres:17
+    container_name: shopsphere-postgres-order
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_order
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_order_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_order"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  postgres-payment:
+    image: postgres:17
+    container_name: shopsphere-postgres-payment
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_payment
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_payment"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  postgres-notification:
+    image: postgres:17
+    container_name: shopsphere-postgres-notification
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: shopsphere
+      POSTGRES_DB: shopsphere_notification
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopsphere_notification"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  # ========================================
+  # REDIS
+  # ========================================
+
+  redis:
+    image: redis:7
+    container_name: shopsphere-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  # ========================================
+  # RABBITMQ
+  # ========================================
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: shopsphere-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+  # ========================================
+  # AUTH SERVICE
+  # ========================================
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: shopsphere-auth
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-auth:5432/shopsphere_auth
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3001
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+
+
+  # ========================================
+  # PRODUCT SERVICE
+  # ========================================
+
+  product-service:
+    build:
+      context: ./services/product-service
+    container_name: shopsphere-product
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-product:5432/shopsphere_product
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres-product:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+
+  # ========================================
+  # CART SERVICE
+  # ========================================
+
+  cart-service:
+    build:
+      context: ./services/cart-service
+    container_name: shopsphere-cart
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-cart:5432/shopsphere_cart
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3002
+      PRODUCT_SERVICE_URL: http://product-service:3000
+    depends_on:
+      postgres-cart:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+
+
+  # ========================================
+  # ORDER SERVICE
+  # ========================================
+
+  order-service:
+    build:
+      context: ./services/order-service
+    container_name: shopsphere-order
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-order:5432/shopsphere_order
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3003
+      CART_SERVICE_URL: http://cart-service:3002
+      PRODUCT_SERVICE_URL: http://product-service:3000
+      INTERNAL_SERVICE_SECRET: shopsphere_internal_service_secret
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      cart-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+
+
+  # ========================================
+  # PAYMENT SERVICE
+  # ========================================
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+    container_name: shopsphere-payment
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-payment:5432/shopsphere_payment
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3004
+      ORDER_SERVICE_URL: http://order-service:3003
+      INTERNAL_SERVICE_SECRET: shopsphere_internal_service_secret
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+
+
+  # ========================================
+  # NOTIFICATION SERVICE
+  # ========================================
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: shopsphere-notification
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      DATABASE_URL: postgresql://postgres:shopsphere@postgres-notification:5432/shopsphere_notification
+      JWT_SECRET: shopsphere_super_secret_change_later
+      PORT: 3005
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+
+  # ========================================
+  # API GATEWAY
+  # ========================================
+
+  api-gateway:
+    build:
+      context: ./gateway
+    container_name: shopsphere-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      PRODUCT_SERVICE_URL: http://product-service:3000
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CART_SERVICE_URL: http://cart-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      PAYMENT_SERVICE_URL: http://payment-service:3004
+      NOTIFICATION_SERVICE_URL: http://notification-service:3005
+    depends_on:
+      product-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+
+
+# ========================================
+# VOLUMES
+# ========================================
+
+volumes:
+
+  postgres_auth_data:
+
+  postgres_product_data:
+
+  postgres_cart_data:
+
+  postgres_order_data:
+
+  postgres_payment_data:
+
+  postgres_notification_data:
+
+  redis_data:
+
+  rabbitmq_data:
