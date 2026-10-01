@@ -1,40 +1,159 @@
-const productService = require("../services/product.service");
+const prisma = require("../config/prisma");
+const AppError = require("../utils/AppError");
 
 const {
     getCachedProduct,
     cacheProduct,
-    deleteCachedProduct
+    deleteCachedProduct,
+    getCachedProducts,
+    cacheProducts,
+    deleteCachedProducts
 } = require("../services/cache.service");
 
-const getProducts = async (req, res, next) => {
-    try {
-        const products = await productService.getAllProducts();
 
-        res.json({
-            products
+// ================================
+// CREATE PRODUCT
+// ================================
+
+const createProduct = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const {
+            name,
+            price
+        } = req.body;
+
+        if (
+            typeof name !== "string" ||
+            !name.trim()
+        ) {
+            throw new AppError(
+                "Product name is required",
+                400
+            );
+        }
+
+        if (
+            typeof price !== "number" ||
+            !Number.isFinite(price) ||
+            price <= 0
+        ) {
+            throw new AppError(
+                "Product price must be greater than 0",
+                400
+            );
+        }
+
+        const product =
+            await prisma.product.create({
+                data: {
+                    name: name.trim(),
+                    price
+                }
+            });
+
+        // Product list cache is now outdated
+        await deleteCachedProducts();
+
+        res.status(201).json({
+            product
         });
+
     } catch (error) {
         next(error);
     }
 };
 
-const getProductById = async (req, res, next) => {
+
+// ================================
+// GET ALL PRODUCTS
+// ================================
+
+const getProducts = async (
+    req,
+    res,
+    next
+) => {
     try {
-        const productId = Number(req.params.id);
+
+        // Check Redis first
+        const cachedProducts =
+            await getCachedProducts();
+
+        if (cachedProducts) {
+
+            console.log(
+                "Redis cache HIT: products:all"
+            );
+
+            return res.status(200).json({
+                products: cachedProducts
+            });
+        }
+
+        // Redis MISS
+        console.log(
+            "Redis cache MISS: products:all"
+        );
+
+        const products =
+            await prisma.product.findMany({
+                orderBy: {
+                    createdAt: "desc"
+                }
+            });
+
+        // Store products in Redis
+        await cacheProducts(
+            products
+        );
+
+        res.status(200).json({
+            products
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ================================
+// GET PRODUCT BY ID
+// ================================
+
+const getProductById = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const productId =
+            Number(req.params.id);
 
         if (
             !Number.isInteger(productId) ||
             productId <= 0
         ) {
-            return res.status(400).json({
-                message: "Invalid product ID"
-            });
+            throw new AppError(
+                "Invalid product ID",
+                400
+            );
         }
 
-        // 1. Check Redis
-        const cachedProduct = await getCachedProduct(productId);
+        // Check Redis
+        const cachedProduct =
+            await getCachedProduct(
+                productId
+            );
 
         if (cachedProduct) {
+
             console.log(
                 `Redis cache HIT: product ${productId}`
             );
@@ -44,100 +163,198 @@ const getProductById = async (req, res, next) => {
             });
         }
 
-        // 2. Redis miss → PostgreSQL
+        // Redis MISS
         console.log(
             `Redis cache MISS: product ${productId}`
         );
 
         const product =
-            await productService.getProductById(productId);
+            await prisma.product.findUnique({
+                where: {
+                    id: productId
+                }
+            });
 
         if (!product) {
-            return res.status(404).json({
-                message: "Product not found"
-            });
+            throw new AppError(
+                "Product not found",
+                404
+            );
         }
 
-        // 3. Store result in Redis
-        await cacheProduct(product);
-
-        // 4. Return product
-        res.status(200).json({
+        // Store product in Redis
+        await cacheProduct(
             product
-        });
-
-    } catch (error) {
-        next(error);
-    }
-};
-
-const createProduct = async (req, res, next) => {
-    try {
-        const product =
-            await productService.createProduct(req.body);
-
-        res.status(201).json({
-            message: "Product created",
-            product
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-const updateProduct = async (req, res, next) => {
-    try {
-        const product =
-            await productService.updateProduct(
-                req.params.id,
-                req.body
-            );
-
-        // Invalidate Redis cache
-        await deleteCachedProduct(
-            Number(req.params.id)
-        );
-
-        res.json({
-            message: "Product updated",
-            product
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-const deleteProduct = async (req, res, next) => {
-    try {
-        const product =
-            await productService.deleteProduct(
-                req.params.id
-            );
-
-        if (!product) {
-            return res.status(404).json({
-                message: "Product not found"
-            });
-        }
-
-        // Invalidate Redis cache
-        await deleteCachedProduct(
-            Number(req.params.id)
         );
 
         res.status(200).json({
-            message: "Product deleted successfully"
+            product
         });
 
     } catch (error) {
         next(error);
     }
 };
+
+
+// ================================
+// UPDATE PRODUCT
+// ================================
+
+const updateProduct = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const productId =
+            Number(req.params.id);
+
+        if (
+            !Number.isInteger(productId) ||
+            productId <= 0
+        ) {
+            throw new AppError(
+                "Invalid product ID",
+                400
+            );
+        }
+
+        const {
+            name,
+            price
+        } = req.body;
+
+        if (
+            typeof name !== "string" ||
+            !name.trim()
+        ) {
+            throw new AppError(
+                "Product name is required",
+                400
+            );
+        }
+
+        if (
+            typeof price !== "number" ||
+            !Number.isFinite(price) ||
+            price <= 0
+        ) {
+            throw new AppError(
+                "Product price must be greater than 0",
+                400
+            );
+        }
+
+        const existingProduct =
+            await prisma.product.findUnique({
+                where: {
+                    id: productId
+                }
+            });
+
+        if (!existingProduct) {
+            throw new AppError(
+                "Product not found",
+                404
+            );
+        }
+
+        const updatedProduct =
+            await prisma.product.update({
+                where: {
+                    id: productId
+                },
+                data: {
+                    name: name.trim(),
+                    price
+                }
+            });
+
+        // Invalidate both caches
+        await deleteCachedProduct(
+            productId
+        );
+
+        await deleteCachedProducts();
+
+        res.status(200).json({
+            product: updatedProduct
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ================================
+// DELETE PRODUCT
+// ================================
+
+const deleteProduct = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const productId =
+            Number(req.params.id);
+
+        if (
+            !Number.isInteger(productId) ||
+            productId <= 0
+        ) {
+            throw new AppError(
+                "Invalid product ID",
+                400
+            );
+        }
+
+        const existingProduct =
+            await prisma.product.findUnique({
+                where: {
+                    id: productId
+                }
+            });
+
+        if (!existingProduct) {
+            throw new AppError(
+                "Product not found",
+                404
+            );
+        }
+
+        await prisma.product.delete({
+            where: {
+                id: productId
+            }
+        });
+
+        // Invalidate both caches
+        await deleteCachedProduct(
+            productId
+        );
+
+        await deleteCachedProducts();
+
+        res.status(200).json({
+            message:
+                "Product deleted successfully"
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 module.exports = {
+    createProduct,
     getProducts,
     getProductById,
-    createProduct,
     updateProduct,
     deleteProduct
 };

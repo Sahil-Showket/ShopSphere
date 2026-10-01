@@ -5,13 +5,23 @@ const {
 
 const PRODUCT_CACHE_TTL = 60;
 
+const getProductCacheKey = (
+    productId
+) => {
+    return `product:${productId}`;
+};
+
+const getProductsCacheKey = () => {
+    return "products:all";
+};
+
 
 const getCachedProduct = async (
     productId
 ) => {
 
     const key =
-        `product:${productId}`;
+        getProductCacheKey(productId);
 
     const cached =
         await redisClient.get(key);
@@ -29,7 +39,7 @@ const cacheProduct = async (
 ) => {
 
     const key =
-        `product:${product.id}`;
+        getProductCacheKey(product.id);
 
     await redisClient.set(
         key,
@@ -46,7 +56,49 @@ const deleteCachedProduct = async (
 ) => {
 
     const key =
-        `product:${productId}`;
+        getProductCacheKey(productId);
+
+    await redisClient.del(key);
+};
+
+
+const getCachedProducts = async () => {
+
+    const key =
+        getProductsCacheKey();
+
+    const cached =
+        await redisClient.get(key);
+
+    if (!cached) {
+        return null;
+    }
+
+    return JSON.parse(cached);
+};
+
+
+const cacheProducts = async (
+    products
+) => {
+
+    const key =
+        getProductsCacheKey();
+
+    await redisClient.set(
+        key,
+        JSON.stringify(products),
+        {
+            EX: PRODUCT_CACHE_TTL
+        }
+    );
+};
+
+
+const deleteCachedProducts = async () => {
+
+    const key =
+        getProductsCacheKey();
 
     await redisClient.del(key);
 };
@@ -55,5 +107,12 @@ const deleteCachedProduct = async (
 module.exports = {
     getCachedProduct,
     cacheProduct,
-    deleteCachedProduct
+    deleteCachedProduct,
+
+    getCachedProducts,
+    cacheProducts,
+    deleteCachedProducts,
+
+    getProductCacheKey,
+    getProductsCacheKey
 };
