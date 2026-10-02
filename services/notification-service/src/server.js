@@ -8,61 +8,40 @@ const notificationRoutes =
 const errorMiddleware =
     require("./middleware/error.middleware");
 
+const {
+    connectRabbitMQ
+} = require("./config/rabbitmq");
 
 const app = express();
 
 const PORT =
     process.env.PORT || 3005;
 
-
-const {
-    connectRabbitMQ
-} = require("./config/rabbitmq");
-
-const {
-    isRabbitMQConnected
-} = require("./config/rabbitmq");
-
 app.use(express.json());
-
 
 app.use(
     "/notifications",
     notificationRoutes
 );
 
-
 app.get("/", (req, res) => {
-
     res.json({
         message:
             "ShopSphere Notification Service"
     });
-
 });
 
-
 app.get("/health", (req, res) => {
+    res.json({
+        service:
+            "notification-service",
 
-    const rabbitmq =isRabbitMQConnected();
-
-    res.status(                 
-        rabbitmq ? 200 : 503
-    ).json({
-        service: "notification-service",
-        status: rabbitmq
-            ? "UP"
-            : "DEGRADED",
-        rabbitmq:
-            rabbitmq
-                ? "UP"
-                : "DOWN"
-    });     
-
+        status:
+            "UP"
+    });
 });
 
 app.use(errorMiddleware);
-
 
 const startServer = async () => {
 
@@ -70,13 +49,14 @@ const startServer = async () => {
 
         await connectRabbitMQ();
 
-        app.listen(PORT, () => {
-
-            console.log(
-                `Notification Service running on port ${PORT}`
-            );
-
-        });
+        app.listen(
+            PORT,
+            () => {
+                console.log(
+                    `Notification Service running on port ${PORT}`
+                );
+            }
+        );
 
     } catch (error) {
 
@@ -89,4 +69,8 @@ const startServer = async () => {
     }
 };
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
