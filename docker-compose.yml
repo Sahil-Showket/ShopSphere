@@ -356,17 +356,33 @@ services:
 volumes:
 
   postgres_auth_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_auth_data
 
   postgres_product_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_product_data
 
   postgres_cart_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_cart_data
 
   postgres_order_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_order_data
 
   postgres_payment_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_payment_data
 
   postgres_notification_data:
+    external: true
+    name: shopspheremultiserviceproject_postgres_notification_data
 
   redis_data:
+    external: true
+    name: shopspheremultiserviceproject_redis_data
 
   rabbitmq_data:
+    external: true
+    name: shopspheremultiserviceproject_rabbitmq_data
