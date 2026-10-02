@@ -7,39 +7,80 @@ const RABBITMQ_URL =
 let connection;
 let channel;
 
-
 const connectRabbitMQ = async () => {
 
-    connection =
-        await amqp.connect(
-            RABBITMQ_URL
+    try {
+
+        connection =
+            await amqp.connect(
+                RABBITMQ_URL
+            );
+
+        channel =
+            await connection.createChannel();
+
+        await channel.assertExchange(
+            "shopsphere.events",
+            "topic",
+            {
+                durable: true
+            }
         );
 
-    channel =
-        await connection.createChannel();
+        connection.on(
+            "error",
+            (error) => {
+                console.error(
+                    "RabbitMQ connection error:",
+                    error.message
+                );
+            }
+        );
 
+        connection.on(
+            "close",
+            () => {
 
-    await channel.assertExchange(
-        "shopsphere.events",
-        "topic",
-        {
-            durable: true
-        }
-    );
+                console.error(
+                    "RabbitMQ connection closed"
+                );
 
+                connection = null;
+                channel = null;
+            }
+        );
 
-    console.log(
-        "Order Service connected to RabbitMQ"
-    );
+        channel.on(
+            "error",
+            (error) => {
+                console.error(
+                    "RabbitMQ channel error:",
+                    error.message
+                );
+            }
+        );
 
+        console.log(
+            "Order Service connected to RabbitMQ"
+        );
 
-    return channel;
+        return channel;
+
+    } catch (error) {
+
+        console.error(
+            "Failed to connect to RabbitMQ:",
+            error.message
+        );
+
+        throw error;
+    }
 };
-
 
 const getChannel = () => {
 
     if (!channel) {
+
         throw new Error(
             "RabbitMQ channel not initialized"
         );
@@ -47,7 +88,6 @@ const getChannel = () => {
 
     return channel;
 };
-
 
 module.exports = {
     connectRabbitMQ,
