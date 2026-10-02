@@ -8,14 +8,14 @@ const paymentRoutes =
 const errorMiddleware =
     require("./middleware/error.middleware");
 
+const {
+    connectRabbitMQ
+} = require("./config/rabbitmq");
+
 const app = express();
 
 const PORT =
     process.env.PORT || 3004;
-
-const {
-    connectRabbitMQ
-} = require("./config/rabbitmq");
 
 app.use(express.json());
 
@@ -24,24 +24,28 @@ app.use(
     paymentRoutes
 );
 
-
 app.get("/", (req, res) => {
-    res.json({
-        message: "ShopSphere Payment Service"
-    });
-});
 
+    res.json({
+        message:
+            "ShopSphere Payment Service"
+    });
+
+});
 
 app.get("/health", (req, res) => {
+
     res.json({
-        service: "payment-service",
-        status: "UP"
+        service:
+            "payment-service",
+
+        status:
+            "UP"
     });
+
 });
 
-
 app.use(errorMiddleware);
-
 
 const startServer = async () => {
 
@@ -49,11 +53,16 @@ const startServer = async () => {
 
         await connectRabbitMQ();
 
-        app.listen(PORT, () => {
-            console.log(
-                `Payment Service running on port ${PORT}`
-            );
-        });
+        app.listen(
+            PORT,
+            () => {
+
+                console.log(
+                    `Payment Service running on port ${PORT}`
+                );
+
+            }
+        );
 
     } catch (error) {
 
@@ -64,6 +73,11 @@ const startServer = async () => {
 
         process.exit(1);
     }
+
 };
 
-startServer();
+if (require.main === "module") {
+    startServer();
+}
+
+module.exports = app;
