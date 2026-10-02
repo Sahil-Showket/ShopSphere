@@ -6,25 +6,31 @@ import {
     useAuth
 } from "../context/AuthContext";
 
-const ProtectedRoute = ({
+function ProtectedRoute({
     children
-}) => {
+}) {
 
     const {
-        token,
+        user,
         loading
     } = useAuth();
 
     if (loading) {
 
         return (
-            <p>
-                Loading...
-            </p>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+                <p>
+                    Loading...
+                </p>
+            </div>
         );
     }
 
-    if (!token) {
+    if (!user) {
 
         return (
             <Navigate
@@ -35,6 +41,6 @@ const ProtectedRoute = ({
     }
 
     return children;
-};
+}
 
 export default ProtectedRoute;

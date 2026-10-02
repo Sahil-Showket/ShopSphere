@@ -1,49 +1,57 @@
-import { useEffect } from "react";
+import {
+    Link
+} from "react-router-dom";
 
-import api from "../services/api";
-
-const Home = () => {
-
-    useEffect(() => {
-
-        const testGateway = async () => {
-
-            try {
-
-                const response =
-                    await api.get(
-                        "/products"
-                    );
-
-                console.log(
-                    "Products:",
-                    response.data
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Gateway request failed:",
-                    error
-                );
-
-            }
-
-        };
-
-        testGateway();
-
-    }, []);
+function Home() {
 
     return (
-        <div>
-            <h1>ShopSphere</h1>
+        <div
+            style={{
+                padding: "50px",
+                textAlign: "center"
+            }}
+        >
+
+            <h1>
+                Welcome to ShopSphere
+            </h1>
 
             <p>
-                Frontend connected to API Gateway.
+                Your distributed e-commerce
+                platform.
             </p>
+
+            <p>
+                Shop products, manage your cart,
+                place orders and make payments.
+            </p>
+
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent:
+                        "center",
+                    gap: "15px",
+                    marginTop: "25px"
+                }}
+            >
+
+                <Link to="/products">
+                    <button>
+                        Browse Products
+                    </button>
+                </Link>
+
+                <Link to="/orders">
+                    <button>
+                        My Orders
+                    </button>
+                </Link>
+
+            </div>
+
         </div>
     );
-};
+}
 
 export default Home;

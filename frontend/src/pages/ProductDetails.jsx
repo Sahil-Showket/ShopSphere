@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import {
+    Link,
     useParams
 } from "react-router-dom";
 
@@ -17,7 +18,7 @@ import {
     useCart
 } from "../context/CartContext";
 
-const ProductDetails = () => {
+function ProductDetails() {
 
     const {
         id
@@ -49,34 +50,40 @@ const ProductDetails = () => {
     const [cartMessage, setCartMessage] =
         useState("");
 
-    const loadProduct =
-        async () => {
+    const loadProduct = async () => {
 
-            try {
+        try {
 
-                const response =
-                    await api.get(
-                        `/products/${id}`
-                    );
+            setLoading(true);
+            setError("");
 
-                setProduct(
-                    response.data.product ||
-                    response.data
+            const response =
+                await api.get(
+                    `/products/${id}`
                 );
 
-            } catch (error) {
+            setProduct(
+                response.data.product ||
+                response.data
+            );
 
-                setError(
-                    error.response?.data
-                        ?.message ||
-                    "Product not found"
-                );
+        } catch (error) {
 
-            } finally {
+            console.error(
+                "Failed to load product:",
+                error
+            );
 
-                setLoading(false);
-            }
-        };
+            setError(
+                error.response?.data?.message ||
+                "Product not found"
+            );
+
+        } finally {
+
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
 
@@ -84,66 +91,100 @@ const ProductDetails = () => {
 
     }, [id]);
 
-    const handleAddToCart =
-        async () => {
+    const handleQuantityChange = (
+        event
+    ) => {
 
-            if (!user) {
+        const value =
+            Number(event.target.value);
 
-                setCartMessage(
-                    "Please login to add products to cart."
-                );
+        if (
+            Number.isInteger(value) &&
+            value >= 1
+        ) {
 
-                return;
-            }
+            setQuantity(value);
+        }
+    };
 
-            try {
+    const handleAddToCart = async () => {
 
-                setAdding(true);
-                setCartMessage("");
+        if (!user) {
 
-                await addToCart(
-                    product.id,
-                    quantity
-                );
+            setCartMessage(
+                "Please login to add products to cart."
+            );
 
-                setCartMessage(
-                    "Product added to cart successfully."
-                );
+            return;
+        }
 
-            } catch (error) {
+        try {
 
-                setCartMessage(
-                    error.response?.data
-                        ?.message ||
-                    "Failed to add product to cart."
-                );
+            setAdding(true);
+            setCartMessage("");
 
-            } finally {
+            await addToCart(
+                product.id,
+                quantity
+            );
 
-                setAdding(false);
-            }
-        };
+            setCartMessage(
+                "Product added to cart successfully."
+            );
+
+        } catch (error) {
+
+            setCartMessage(
+                error.response?.data?.message ||
+                "Failed to add product to cart."
+            );
+
+        } finally {
+
+            setAdding(false);
+        }
+    };
 
     if (loading) {
 
         return (
-            <p>
-                Loading...
-            </p>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+                <p>
+                    Loading product...
+                </p>
+            </div>
         );
     }
 
     if (error) {
 
         return (
-            <p>
-                {error}
-            </p>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+                <p>
+                    {error}
+                </p>
+
+                <Link to="/products">
+                    Back to Products
+                </Link>
+            </div>
         );
     }
 
     return (
-        <div>
+        <div
+            style={{
+                padding: "30px"
+            }}
+        >
 
             <h1>
                 {product.name}
@@ -154,12 +195,11 @@ const ProductDetails = () => {
             </h2>
 
             <p>
-                Product ID:
-                {" "}
-                {product.id}
+                Product ID: {product.id}
             </p>
 
             {user ? (
+
                 <div>
 
                     <label>
@@ -170,17 +210,12 @@ const ProductDetails = () => {
                         type="number"
                         min="1"
                         value={quantity}
-                        onChange={(event) => {
-
-                            const value =
-                                Number(
-                                    event.target.value
-                                );
-
-                            if (value >= 1) {
-                                setQuantity(value);
-                            }
-
+                        onChange={
+                            handleQuantityChange
+                        }
+                        style={{
+                            marginLeft: "10px",
+                            width: "70px"
                         }}
                     />
 
@@ -189,6 +224,9 @@ const ProductDetails = () => {
                             handleAddToCart
                         }
                         disabled={adding}
+                        style={{
+                            marginLeft: "10px"
+                        }}
                     >
                         {adding
                             ? "Adding..."
@@ -196,21 +234,32 @@ const ProductDetails = () => {
                     </button>
 
                 </div>
+
             ) : (
+
                 <p>
                     Please login to add this
                     product to your cart.
                 </p>
+
             )}
 
             {cartMessage && (
+
                 <p>
                     {cartMessage}
                 </p>
+
             )}
+
+            <br />
+
+            <Link to="/products">
+                Back to Products
+            </Link>
 
         </div>
     );
-};
+}
 
 export default ProductDetails;

@@ -24,16 +24,22 @@ function Navbar() {
     return (
         <nav
             style={{
-                padding: "15px",
+                padding: "15px 25px",
                 borderBottom:
                     "1px solid #ddd",
                 display: "flex",
                 gap: "20px",
-                alignItems: "center"
+                alignItems: "center",
+                flexWrap: "wrap"
             }}
         >
 
-            <Link to="/">
+            <Link
+                to="/"
+                style={{
+                    fontWeight: "bold"
+                }}
+            >
                 ShopSphere
             </Link>
 

@@ -62,9 +62,18 @@ function Orders() {
     if (loading) {
 
         return (
-            <div>
-                <h1>My Orders</h1>
-                <p>Loading orders...</p>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+                <h1>
+                    My Orders
+                </h1>
+
+                <p>
+                    Loading orders...
+                </p>
             </div>
         );
     }
@@ -72,9 +81,24 @@ function Orders() {
     if (error) {
 
         return (
-            <div>
-                <h1>My Orders</h1>
-                <p>{error}</p>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+                <h1>
+                    My Orders
+                </h1>
+
+                <p>
+                    {error}
+                </p>
+
+                <button
+                    onClick={loadOrders}
+                >
+                    Try Again
+                </button>
             </div>
         );
     }
@@ -82,8 +106,15 @@ function Orders() {
     if (orders.length === 0) {
 
         return (
-            <div>
-                <h1>My Orders</h1>
+            <div
+                style={{
+                    padding: "30px"
+                }}
+            >
+
+                <h1>
+                    My Orders
+                </h1>
 
                 <p>
                     You have no orders yet.
@@ -92,59 +123,68 @@ function Orders() {
                 <Link to="/products">
                     Continue Shopping
                 </Link>
+
             </div>
         );
     }
 
     return (
-        <div>
+        <div
+            style={{
+                padding: "30px"
+            }}
+        >
 
             <h1>
                 My Orders
             </h1>
 
-            {orders.map((order) => (
+            {orders.map(
+                (order) => (
 
-                <div
-                    key={order.id}
-                    style={{
-                        border: "1px solid #ddd",
-                        padding: "16px",
-                        marginBottom: "15px"
-                    }}
-                >
-
-                    <h3>
-                        Order #{order.id}
-                    </h3>
-
-                    <p>
-                        Status:{" "}
-                        <strong>
-                            {order.status}
-                        </strong>
-                    </p>
-
-                    <p>
-                        Total: ₹{order.total}
-                    </p>
-
-                    <p>
-                        Created:{" "}
-                        {new Date(
-                            order.createdAt
-                        ).toLocaleString()}
-                    </p>
-
-                    <Link
-                        to={`/orders/${order.id}`}
+                    <div
+                        key={order.id}
+                        style={{
+                            border:
+                                "1px solid #ddd",
+                            padding:
+                                "20px",
+                            marginBottom:
+                                "15px"
+                        }}
                     >
-                        View Order
-                    </Link>
 
-                </div>
+                        <h3>
+                            Order #{order.id}
+                        </h3>
 
-            ))}
+                        <p>
+                            Status:{" "}
+                            <strong>
+                                {order.status}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Total: ₹{order.total}
+                        </p>
+
+                        <p>
+                            Created:{" "}
+                            {new Date(
+                                order.createdAt
+                            ).toLocaleString()}
+                        </p>
+
+                        <Link
+                            to={`/orders/${order.id}`}
+                        >
+                            View Order
+                        </Link>
+
+                    </div>
+                )
+            )}
 
         </div>
     );

@@ -11,6 +11,7 @@ import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import OrderDetails from "./pages/OrderDetails";
+import NotFound from "./pages/NotFound";
 
 import Navbar from "./components/Navbar";
 
@@ -85,6 +86,11 @@ function App() {
                             </h1>
                         </ProtectedRoute>
                     }
+                />
+
+                <Route
+                    path="*"
+                    element={<NotFound />}
                 />
 
             </Routes>

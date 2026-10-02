@@ -11,9 +11,12 @@ import {
     useAuth
 } from "./AuthContext";
 
-const CartContext = createContext();
+const CartContext =
+    createContext();
 
-export const CartProvider = ({ children }) => {
+export const CartProvider = ({
+    children
+}) => {
 
     const {
         token
@@ -31,7 +34,10 @@ export const CartProvider = ({ children }) => {
     const fetchCart = async () => {
 
         if (!token) {
+
             setCart(null);
+            setError("");
+
             return;
         }
 
@@ -43,7 +49,9 @@ export const CartProvider = ({ children }) => {
             const response =
                 await api.get("/cart");
 
-            setCart(response.data);
+            setCart(
+                response.data
+            );
 
         } catch (error) {
 
@@ -104,17 +112,23 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
 
         if (token) {
+
             fetchCart();
+
         } else {
+
             setCart(null);
+            setError("");
         }
 
     }, [token]);
 
     const cartItemCount =
         cart?.items?.reduce(
-            (total, item) =>
-                total + item.quantity,
+            (
+                total,
+                item
+            ) => total + item.quantity,
             0
         ) || 0;
 
