@@ -5,85 +5,61 @@ require("dotenv").config({
 });
 
 const express = require("express");
-
 const cors = require("cors");
-
 const helmet = require("helmet");
-
-const rateLimit =
-    require("express-rate-limit");
+const rateLimit = require("express-rate-limit");
 
 const {
-    createProxyMiddleware
+    createProxyMiddleware,
+    fixRequestBody
 } = require("http-proxy-middleware");
 
 const authenticateToken =
     require("./middleware/auth.middleware");
 
-
 const app = express();
-
 
 const PORT =
     process.env.PORT || 4000;
-
 
 const PRODUCT_SERVICE_URL =
     process.env.PRODUCT_SERVICE_URL ||
     "http://localhost:3000";
 
-
 const AUTH_SERVICE_URL =
     process.env.AUTH_SERVICE_URL ||
     "http://localhost:3001";
-
 
 const CART_SERVICE_URL =
     process.env.CART_SERVICE_URL ||
     "http://localhost:3002";
 
-
 const ORDER_SERVICE_URL =
     process.env.ORDER_SERVICE_URL ||
     "http://localhost:3003";
 
-
 const PAYMENT_SERVICE_URL =
     process.env.PAYMENT_SERVICE_URL ||
     "http://localhost:3004";
-
 
 const NOTIFICATION_SERVICE_URL =
     process.env.NOTIFICATION_SERVICE_URL ||
     "http://localhost:3005";
 
 
-/*
- * ------------------------------------------------
- * SECURITY HEADERS
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Security
+// --------------------------------------------------
 
-app.use(
-    helmet()
-);
-
-
-/*
- * ------------------------------------------------
- * CORS
- * ------------------------------------------------
- */
+app.use(helmet());
 
 const allowedOrigin =
     process.env.CORS_ORIGIN ||
     "http://localhost:5173";
 
-
 app.use(
     cors({
         origin: allowedOrigin,
-
         methods: [
             "GET",
             "POST",
@@ -92,7 +68,6 @@ app.use(
             "DELETE",
             "OPTIONS"
         ],
-
         allowedHeaders: [
             "Content-Type",
             "Authorization"
@@ -101,18 +76,28 @@ app.use(
 );
 
 
-/*
- * ------------------------------------------------
- * RATE LIMITING
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// JSON body parser
+// --------------------------------------------------
+
+app.use(
+    express.json({
+        limit: "1mb"
+    })
+);
+
+
+// --------------------------------------------------
+// Rate limiting
+// --------------------------------------------------
 
 const apiLimiter =
     rateLimit({
         windowMs:
             Number(
                 process.env.RATE_LIMIT_WINDOW_MS
-            ) || 15 * 60 * 1000,
+            ) ||
+            15 * 60 * 1000,
 
         limit:
             Number(
@@ -129,62 +114,46 @@ const apiLimiter =
         }
     });
 
-
-app.use(
-    apiLimiter
-);
+app.use(apiLimiter);
 
 
-/*
- * ------------------------------------------------
- * HEALTH
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Health
+// --------------------------------------------------
 
 app.get(
     "/health",
     (req, res) => {
 
         res.status(200).json({
-
-            service:
-                "api-gateway",
-
-            status:
-                "UP"
-
+            service: "api-gateway",
+            status: "UP"
         });
 
     }
 );
 
 
-/*
- * ------------------------------------------------
- * ROOT
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Root
+// --------------------------------------------------
 
 app.get(
     "/",
     (req, res) => {
 
         res.status(200).json({
-
             message:
                 "ShopSphere API Gateway"
-
         });
 
     }
 );
 
 
-/*
- * ------------------------------------------------
- * ORDER SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Order Service
+// --------------------------------------------------
 
 app.use(
     "/orders",
@@ -201,36 +170,39 @@ app.use(
             (path) =>
                 `/orders${path}`,
 
-        onError:
-            (err, req, res) => {
+        on: {
 
-                console.error(
-                    "Order Service proxy error:",
-                    err.message
-                );
+            proxyReq:
+                fixRequestBody,
 
-                if (!res.headersSent) {
+            error:
+                (err, req, res) => {
 
-                    res.status(503).json({
+                    console.error(
+                        "Order Service proxy error:",
+                        err.message
+                    );
 
-                        message:
-                            "Order service unavailable"
+                    if (!res.headersSent) {
 
-                    });
+                        res.status(503).json({
+                            message:
+                                "Order service unavailable"
+                        });
+
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * PRODUCT SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Product Service
+// --------------------------------------------------
 
 app.use(
     "/products",
@@ -247,36 +219,39 @@ app.use(
             (path) =>
                 `/products${path}`,
 
-        onError:
-            (err, req, res) => {
+        on: {
 
-                console.error(
-                    "Product Service proxy error:",
-                    err.message
-                );
+            proxyReq:
+                fixRequestBody,
 
-                if (!res.headersSent) {
+            error:
+                (err, req, res) => {
 
-                    res.status(503).json({
+                    console.error(
+                        "Product Service proxy error:",
+                        err.message
+                    );
 
-                        message:
-                            "Product service unavailable"
+                    if (!res.headersSent) {
 
-                    });
+                        res.status(503).json({
+                            message:
+                                "Product service unavailable"
+                        });
+
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * AUTH SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Auth protected routes
+// --------------------------------------------------
 
 app.use(
     "/auth/me",
@@ -288,60 +263,59 @@ app.use(
     authenticateToken
 );
 
+
+// --------------------------------------------------
+// Auth Service
+// --------------------------------------------------
+
 app.use(
     "/auth",
 
     createProxyMiddleware({
 
         target:
-            `${AUTH_SERVICE_URL}/auth`,
+            AUTH_SERVICE_URL,
 
         changeOrigin:
             true,
 
-        onProxyReq:
-            (proxyReq, req, res) => {
+        pathRewrite:
+            (path) =>
+                `/auth${path}`,
 
-                console.log(
-                    "AUTH PROXY:",
-                    req.method,
-                    req.originalUrl,
-                    "->",
-                    `${AUTH_SERVICE_URL}/auth${req.url}`
-                );
+        on: {
 
-            },
+            proxyReq:
+                fixRequestBody,
 
-        onError:
-            (err, req, res) => {
+            error:
+                (err, req, res) => {
 
-                console.error(
-                    "Auth Service proxy error:",
-                    err.message
-                );
+                    console.error(
+                        "Auth Service proxy error:",
+                        err.message
+                    );
 
-                if (!res.headersSent) {
+                    if (!res.headersSent) {
 
-                    res.status(503).json({
+                        res.status(503).json({
+                            message:
+                                "Auth service unavailable"
+                        });
 
-                        message:
-                            "Auth service unavailable"
-
-                    });
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * CART SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Cart Service
+// --------------------------------------------------
 
 app.use(
     "/cart",
@@ -358,36 +332,39 @@ app.use(
             (path) =>
                 `/cart${path}`,
 
-        onError:
-            (err, req, res) => {
+        on: {
 
-                console.error(
-                    "Cart Service proxy error:",
-                    err.message
-                );
+            proxyReq:
+                fixRequestBody,
 
-                if (!res.headersSent) {
+            error:
+                (err, req, res) => {
 
-                    res.status(503).json({
+                    console.error(
+                        "Cart Service proxy error:",
+                        err.message
+                    );
 
-                        message:
-                            "Cart service unavailable"
+                    if (!res.headersSent) {
 
-                    });
+                        res.status(503).json({
+                            message:
+                                "Cart service unavailable"
+                        });
+
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * PAYMENT SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Payment Service
+// --------------------------------------------------
 
 app.use(
     "/payments",
@@ -404,36 +381,39 @@ app.use(
             (path) =>
                 `/payments${path}`,
 
-        onError:
-            (err, req, res) => {
+        on: {
 
-                console.error(
-                    "Payment Service proxy error:",
-                    err.message
-                );
+            proxyReq:
+                fixRequestBody,
 
-                if (!res.headersSent) {
+            error:
+                (err, req, res) => {
 
-                    res.status(503).json({
+                    console.error(
+                        "Payment Service proxy error:",
+                        err.message
+                    );
 
-                        message:
-                            "Payment service unavailable"
+                    if (!res.headersSent) {
 
-                    });
+                        res.status(503).json({
+                            message:
+                                "Payment service unavailable"
+                        });
+
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * NOTIFICATION SERVICE
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Notification Service
+// --------------------------------------------------
 
 app.use(
     "/notifications",
@@ -450,59 +430,63 @@ app.use(
             (path) =>
                 `/notifications${path}`,
 
-        onError:
-            (err, req, res) => {
+        on: {
 
-                console.error(
-                    "Notification Service proxy error:",
-                    err.message
-                );
+            proxyReq:
+                fixRequestBody,
 
-                if (!res.headersSent) {
+            error:
+                (err, req, res) => {
 
-                    res.status(503).json({
+                    console.error(
+                        "Notification Service proxy error:",
+                        err.message
+                    );
 
-                        message:
-                            "Notification service unavailable"
+                    if (!res.headersSent) {
 
-                    });
+                        res.status(503).json({
+                            message:
+                                "Notification service unavailable"
+                        });
+
+                    }
 
                 }
 
-            }
+        }
 
     })
 );
 
 
-/*
- * ------------------------------------------------
- * 404 HANDLER
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// 404
+// --------------------------------------------------
 
 app.use(
     (req, res) => {
 
         res.status(404).json({
-
             message:
                 "Gateway route not found"
-
         });
 
     }
 );
 
 
-/*
- * ------------------------------------------------
- * GLOBAL ERROR HANDLER
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Global error handler
+// --------------------------------------------------
 
 app.use(
-    (err, req, res, next) => {
+    (
+        err,
+        req,
+        res,
+        next
+    ) => {
 
         console.error(
             "Gateway error:",
@@ -510,27 +494,24 @@ app.use(
         );
 
         if (res.headersSent) {
-
             return next(err);
-
         }
 
-        res.status(500).json({
-
+        res.status(
+            err.statusCode || 500
+        ).json({
             message:
+                err.message ||
                 "Internal gateway error"
-
         });
 
     }
 );
 
 
-/*
- * ------------------------------------------------
- * START SERVER
- * ------------------------------------------------
- */
+// --------------------------------------------------
+// Start server
+// --------------------------------------------------
 
 app.listen(
     PORT,
