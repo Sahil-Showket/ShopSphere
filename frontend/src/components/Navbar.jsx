@@ -1,84 +1,77 @@
 import {
-    Link,
-    useNavigate
+    Link
 } from "react-router-dom";
 
 import {
     useAuth
 } from "../context/AuthContext";
 
-const Navbar = () => {
+import {
+    useCart
+} from "../context/CartContext";
+
+function Navbar() {
 
     const {
-        token,
         user,
         logout
     } = useAuth();
 
-    const navigate =
-        useNavigate();
-
-    const handleLogout = () => {
-
-        logout();
-
-        navigate(
-            "/login"
-        );
-    };
+    const {
+        cartItemCount
+    } = useCart();
 
     return (
-        <nav>
+        <nav
+            style={{
+                padding: "15px",
+                borderBottom: "1px solid #ddd",
+                display: "flex",
+                gap: "20px",
+                alignItems: "center"
+            }}
+        >
 
             <Link to="/">
                 ShopSphere
             </Link>
 
-            {" | "}
-
             <Link to="/products">
                 Products
             </Link>
 
-            {" | "}
+            {user && (
+                <Link to="/cart">
+                    Cart ({cartItemCount})
+                </Link>
+            )}
 
-            {token ? (
-
+            {user ? (
                 <>
-                    <span>
-                        Welcome{" "}
-                        {user?.email}
-                    </span>
-
-                    {" "}
+                    <Link to="/account">
+                        Account
+                    </Link>
 
                     <button
-                        onClick={
-                            handleLogout
-                        }
+                        onClick={logout}
                     >
                         Logout
                     </button>
                 </>
-
             ) : (
-
                 <>
                     <Link to="/login">
                         Login
                     </Link>
 
-                    {" | "}
-
                     <Link to="/register">
                         Register
                     </Link>
                 </>
-
             )}
 
         </nav>
     );
-};
+}
 
 export default Navbar;
