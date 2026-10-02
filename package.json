@@ -25,6 +25,7 @@
     "xtend": "^4.0.2"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "nodemon": "^3.1.14"
   },
   "scripts": {
