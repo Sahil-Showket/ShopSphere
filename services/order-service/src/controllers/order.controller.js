@@ -96,12 +96,13 @@ const createOrder = async (req, res, next) => {
             }
         });
 
+        // Publish order confirmed event
         await publishEvent(
             "order.confirmed",
             {
-                userId: updatedOrder.userId,
-                orderId: updatedOrder.id,
-                total: updatedOrder.total
+                userId: order.userId,
+                orderId: order.id,
+                total: order.total
             }
         );
 
@@ -136,7 +137,6 @@ const getMyOrders = async (req, res, next) => {
         next(error);
     }
 };
-
 
 const getOrderById = async (req, res, next) => {
     try {

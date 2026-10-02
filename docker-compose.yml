@@ -322,6 +322,7 @@ services:
       ORDER_SERVICE_URL: http://order-service:3003
       PAYMENT_SERVICE_URL: http://payment-service:3004
       NOTIFICATION_SERVICE_URL: http://notification-service:3005
+      JWT_SECRET: shopsphere_super_secret_change_later
     depends_on:
       product-service:
         condition: service_started
