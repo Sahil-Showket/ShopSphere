@@ -1,8 +1,8 @@
-require("dotenv").config({
-    path: "./gateway/.env"
-});
+const path = require("path");
 
-require("dotenv").config();
+require("dotenv").config({
+    path: path.resolve(__dirname, "../.env")
+});
 
 const express = require("express");
 
@@ -83,6 +83,7 @@ const allowedOrigin =
 app.use(
     cors({
         origin: allowedOrigin,
+
         methods: [
             "GET",
             "POST",
@@ -91,23 +92,11 @@ app.use(
             "DELETE",
             "OPTIONS"
         ],
+
         allowedHeaders: [
             "Content-Type",
             "Authorization"
         ]
-    })
-);
-
-
-/*
- * ------------------------------------------------
- * JSON BODY PARSER
- * ------------------------------------------------
- */
-
-app.use(
-    express.json({
-        limit: "1mb"
     })
 );
 
@@ -294,12 +283,10 @@ app.use(
     authenticateToken
 );
 
-
 app.use(
     "/auth/admin",
     authenticateToken
 );
-
 
 app.use(
     "/auth",
@@ -307,14 +294,23 @@ app.use(
     createProxyMiddleware({
 
         target:
-            AUTH_SERVICE_URL,
+            `${AUTH_SERVICE_URL}/auth`,
 
         changeOrigin:
             true,
 
-        pathRewrite:
-            (path) =>
-                `/auth${path}`,
+        onProxyReq:
+            (proxyReq, req, res) => {
+
+                console.log(
+                    "AUTH PROXY:",
+                    req.method,
+                    req.originalUrl,
+                    "->",
+                    `${AUTH_SERVICE_URL}/auth${req.url}`
+                );
+
+            },
 
         onError:
             (err, req, res) => {
