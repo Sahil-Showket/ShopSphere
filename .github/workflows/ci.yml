@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
@@ -22,6 +21,37 @@ jobs:
           - order-service
           - payment-service
           - notification-service
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shopsphere_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d shopsphere_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/shopsphere_${{ matrix.service }}
+      JWT_SECRET: shopsphere_ci_test_secret
+      REDIS_URL: redis://localhost:6379
+      RABBITMQ_URL: amqp://guest:guest@localhost:5672
 
     defaults:
       run:
@@ -41,8 +71,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create test database
+        run: |
+          PGPASSWORD=postgres psql \
+            -h localhost \
+            -U postgres \
+            -d postgres \
+            -c "CREATE DATABASE shopsphere_${{ matrix.service }};"
+
       - name: Generate Prisma Client
         run: npx prisma generate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Run tests
         run: npm test
