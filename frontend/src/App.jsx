@@ -9,6 +9,8 @@ import Register from "./pages/Register";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
+import Orders from "./pages/Orders";
+import OrderDetails from "./pages/OrderDetails";
 
 import Navbar from "./components/Navbar";
 
@@ -57,10 +59,30 @@ function App() {
                 />
 
                 <Route
+                    path="/orders"
+                    element={
+                        <ProtectedRoute>
+                            <Orders />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/orders/:id"
+                    element={
+                        <ProtectedRoute>
+                            <OrderDetails />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
                     path="/account"
                     element={
                         <ProtectedRoute>
-                            <h1>My Account</h1>
+                            <h1>
+                                My Account
+                            </h1>
                         </ProtectedRoute>
                     }
                 />

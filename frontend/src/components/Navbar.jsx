@@ -25,7 +25,8 @@ function Navbar() {
         <nav
             style={{
                 padding: "15px",
-                borderBottom: "1px solid #ddd",
+                borderBottom:
+                    "1px solid #ddd",
                 display: "flex",
                 gap: "20px",
                 alignItems: "center"
@@ -41,13 +42,15 @@ function Navbar() {
             </Link>
 
             {user && (
-                <Link to="/cart">
-                    Cart ({cartItemCount})
-                </Link>
-            )}
-
-            {user ? (
                 <>
+                    <Link to="/cart">
+                        Cart ({cartItemCount})
+                    </Link>
+
+                    <Link to="/orders">
+                        Orders
+                    </Link>
+
                     <Link to="/account">
                         Account
                     </Link>
@@ -58,7 +61,9 @@ function Navbar() {
                         Logout
                     </button>
                 </>
-            ) : (
+            )}
+
+            {!user && (
                 <>
                     <Link to="/login">
                         Login
