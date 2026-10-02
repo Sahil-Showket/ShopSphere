@@ -14,13 +14,19 @@ jobs:
 
     strategy:
       matrix:
-        service:
-          - auth-service
-          - product-service
-          - cart-service
-          - order-service
-          - payment-service
-          - notification-service
+        include:
+          - service: auth-service
+            db: shopsphere_auth
+          - service: product-service
+            db: shopsphere_product
+          - service: cart-service
+            db: shopsphere_cart
+          - service: order-service
+            db: shopsphere_order
+          - service: payment-service
+            db: shopsphere_payment
+          - service: notification-service
+            db: shopsphere_notification
 
     services:
       postgres:
@@ -48,7 +54,7 @@ jobs:
           - 5672:5672
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/shopsphere_${{ matrix.service }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/${{ matrix.db }}
       JWT_SECRET: shopsphere_ci_test_secret
       REDIS_URL: redis://localhost:6379
       RABBITMQ_URL: amqp://guest:guest@localhost:5672
@@ -77,7 +83,7 @@ jobs:
             -h localhost \
             -U postgres \
             -d postgres \
-            -c "CREATE DATABASE shopsphere_${{ matrix.service }};"
+            -c "CREATE DATABASE ${{ matrix.db }};"
 
       - name: Generate Prisma Client
         run: npx prisma generate
