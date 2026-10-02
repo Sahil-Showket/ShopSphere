@@ -1,2 +1,31 @@
 # ShopSphere
-A production-oriented microservices e-commerce platform with API Gateway, JWT authentication, Kafka, Redis, Docker, database-per-service, and event-driven communication.
+
+ShopSphere is a production-style distributed e-commerce platform built using
+Node.js, Express, React, PostgreSQL, Prisma, Redis, RabbitMQ and Docker.
+
+## Architecture
+
+```text
+React Frontend
+      |
+      v
+ API Gateway
+      |
+      +---- Auth Service
+      |
+      +---- Product Service
+      |
+      +---- Cart Service
+      |
+      +---- Order Service
+      |
+      +---- Payment Service
+      |
+      +---- Notification Service
+
+Infrastructure:
+
+PostgreSQL
+Redis
+RabbitMQ
+Docker
