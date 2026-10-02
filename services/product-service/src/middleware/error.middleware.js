@@ -1,9 +1,19 @@
-const errorMiddleware = (err, req, res, next) => {
+const errorMiddleware = (
+    err,
+    req,
+    res,
+    next
+) => {
 
     console.error(err);
 
-    res.status(500).json({
-        message: "Internal server error"
+    const statusCode =
+        err.statusCode || 500;
+
+    res.status(statusCode).json({
+        message:
+            err.message ||
+            "Internal server error"
     });
 };
 

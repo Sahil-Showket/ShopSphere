@@ -1,7 +1,6 @@
 require("dotenv").config();
 
-const express =
-    require("express");
+const express = require("express");
 
 const productRoutes =
     require("./routes/product.routes");
@@ -14,38 +13,29 @@ const {
     isRedisAvailable
 } = require("./config/redis");
 
-
-const app =
-    express();
-
+const app = express();
 
 const PORT =
     process.env.PORT || 3000;
 
-
 app.use(
     express.json()
 );
-
 
 app.use(
     "/products",
     productRoutes
 );
 
-
 app.get("/", (
     req,
     res
 ) => {
-
     res.json({
         message:
             "ShopSphere Product Service"
     });
-
 });
-
 
 app.get("/health", (
     req,
@@ -54,7 +44,6 @@ app.get("/health", (
 
     const redis =
         isRedisAvailable();
-
 
     res.status(200).json({
 
@@ -73,11 +62,9 @@ app.get("/health", (
 
 });
 
-
 app.use(
     errorMiddleware
 );
-
 
 const startServer = async () => {
 
@@ -85,7 +72,6 @@ const startServer = async () => {
     // Product Service can run without it.
 
     await connectRedis();
-
 
     app.listen(
         PORT,
@@ -100,5 +86,8 @@ const startServer = async () => {
 
 };
 
+if (require.main === module) {
+    startServer();
+}
 
-startServer();
+module.exports = app;
