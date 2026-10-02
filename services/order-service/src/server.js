@@ -1,33 +1,48 @@
 require("dotenv").config();
 
 const express = require("express");
-const orderRoutes = require("./routes/order.routes");
-const errorMiddleware = require("./middleware/error.middleware");
 
-const app = express();
+const orderRoutes =
+    require("./routes/order.routes");
+
+const errorMiddleware =
+    require("./middleware/error.middleware");
+
 const {
     connectRabbitMQ
 } = require("./config/rabbitmq");
 
-app.use(errorMiddleware);
+const app = express();
 
-const PORT = process.env.PORT || 3003;
+const PORT =
+    process.env.PORT || 3003;
 
 app.use(express.json());
 
-app.use("/orders", orderRoutes);
+app.use(
+    "/orders",
+    orderRoutes
+);
 
 app.get("/", (req, res) => {
+
     res.json({
-        message: "ShopSphere Order Service"
+        message:
+            "ShopSphere Order Service"
     });
+
 });
 
 app.get("/health", (req, res) => {
+
     res.json({
-        service: "order-service",
-        status: "UP"
+        service:
+            "order-service",
+
+        status:
+            "UP"
     });
+
 });
 
 app.use(errorMiddleware);
@@ -38,13 +53,16 @@ const startServer = async () => {
 
         await connectRabbitMQ();
 
-        app.listen(PORT, () => {
+        app.listen(
+            PORT,
+            () => {
 
-            console.log(
-                `Order Service running on port ${PORT}`
-            );
+                console.log(
+                    `Order Service running on port ${PORT}`
+                );
 
-        });
+            }
+        );
 
     } catch (error) {
 
@@ -57,4 +75,8 @@ const startServer = async () => {
     }
 };
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
